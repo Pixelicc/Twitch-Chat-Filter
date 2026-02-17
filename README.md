@@ -45,3 +45,9 @@ A customizable browser extension for filtering chat messages on Twitch.
 
 2. **Open Extension Popup:**
    - Click the Twitch Chat Filter icon in your toolbar
+  
+## Screenshots
+
+<img width="313" height="497" alt="image" src="https://github.com/user-attachments/assets/5e25573a-a4dd-4518-b271-818c7a2e4b8e" />
+<img width="318" height="387" alt="image" src="https://github.com/user-attachments/assets/2f571abc-3c4f-4dfe-a5fe-7fd5c61e7f4b" />
+
