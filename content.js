@@ -1,4 +1,4 @@
-const style = document.createElement('style');
+const style = document.createElement("style");
 style.textContent = `
   .blocked-by-twitch-chat-filter {
     display: none !important;
@@ -13,7 +13,7 @@ let globalFilters = {
 
 const updateStats = (filter) => {
   if (!filter) return;
-  chrome.storage.local.get(['stats'], (result) => {
+  chrome.storage.local.get(["stats"], (result) => {
     const stats = result.stats || {};
     stats[filter] = (stats[filter] || 0) + 1;
     chrome.storage.local.set({ stats });
@@ -21,7 +21,7 @@ const updateStats = (filter) => {
 };
 
 const isAsciiArt = (text) => {
-  const nonAsciiRatio = text.replace(/[a-zA-Z0-9\s]/g, '').length / text.length;
+  const nonAsciiRatio = text.replace(/[a-zA-Z0-9\s]/g, "").length / text.length;
   return nonAsciiRatio > 0.5;
 };
 
@@ -34,10 +34,10 @@ const checkAndApplyBlocking = (element) => {
   let isBlockedByGlobalFilter = false;
   if (globalFilters.blockAscii && isAsciiArt(messageText)) {
     isBlockedByGlobalFilter = true;
-    triggeredFilter = 'ASCII Art';
+    triggeredFilter = "ASCII Art";
   }
 
-  const activeBlockedWords = blockedWords.filter(item => item.enabled !== false);
+  const activeBlockedWords = blockedWords.filter((item) => item.enabled !== false);
 
   let hasTextMatch = false;
   if (lowerCaseMessageText) {
@@ -53,18 +53,20 @@ const checkAndApplyBlocking = (element) => {
   }
 
   let hasEmoteMatch = false;
-  const emotes = element.querySelectorAll('img.chat-image, img.seventv-chat-emote');
+  const emotes = element.querySelectorAll("img.chat-image, img.seventv-chat-emote");
   for (const emote of emotes) {
     const emoteAlt = emote.alt.toLowerCase();
-    if (activeBlockedWords.some(item => {
-      if (emoteAlt.includes(item.word.toLowerCase())) {
-        if (!isBlockedByGlobalFilter && !hasTextMatch) {
+    if (
+      activeBlockedWords.some((item) => {
+        if (emoteAlt.includes(item.word.toLowerCase())) {
+          if (!isBlockedByGlobalFilter && !hasTextMatch) {
             triggeredFilter = item.word;
+          }
+          return true;
         }
-        return true;
-      }
-      return false;
-    })) {
+        return false;
+      })
+    ) {
       hasEmoteMatch = true;
       break;
     }
@@ -73,18 +75,20 @@ const checkAndApplyBlocking = (element) => {
   const isBlocked = isBlockedByGlobalFilter || hasTextMatch || hasEmoteMatch;
 
   let lineToBlock = null;
-  if (element.matches('.chat-line__message')) {
-    lineToBlock = element.closest('.chat-line__message-container');
-  } else if (element.matches('.seventv-message')) {
+  if (element.matches(".chat-line__message")) {
+    lineToBlock = element.closest(".chat-line__message-container");
+  } else if (element.matches(".seventv-message")) {
     lineToBlock = element;
   }
 
-  const wasBlocked = lineToBlock && lineToBlock.classList.contains('blocked-by-twitch-chat-filter');
+  const wasBlocked = lineToBlock && lineToBlock.classList.contains("blocked-by-twitch-chat-filter");
 
   if (isBlocked && !wasBlocked) {
     const fullMessageText = element.textContent.trim();
-    const lineContainer = element.closest('.chat-line__message-container, .seventv-message');
-    const userRaw = lineContainer?.querySelector('.chat-author__display-name, [data-a-target="chat-message-username"], .seventv-chat-user-username');
+    const lineContainer = element.closest(".chat-line__message-container, .seventv-message");
+    const userRaw = lineContainer?.querySelector(
+      '.chat-author__display-name, [data-a-target="chat-message-username"], .seventv-chat-user-username',
+    );
     let user = userRaw ? userRaw.textContent : null;
     let messageForLog = fullMessageText;
     const messageBodyRaw = element.querySelector('[data-a-target="chat-line-message-body"]');
@@ -105,30 +109,28 @@ const checkAndApplyBlocking = (element) => {
           messageForLog = textToParse.substring(userMatch[0].length).trim();
         }
       } else {
-        user = 'Unknown User';
+        user = "Unknown User";
       }
     }
     console.log(`[Twitch Chat Filter] blocked,filter=${triggeredFilter},user=${user},message=${messageForLog}`);
     updateStats(triggeredFilter);
     if (lineToBlock) {
-        lineToBlock.classList.add('blocked-by-twitch-chat-filter');
+      lineToBlock.classList.add("blocked-by-twitch-chat-filter");
     }
   } else if (!isBlocked && wasBlocked) {
     if (lineToBlock) {
-        lineToBlock.classList.remove('blocked-by-twitch-chat-filter');
+      lineToBlock.classList.remove("blocked-by-twitch-chat-filter");
     }
   }
 };
 
 const scanAndApplyBlockingToAllMessages = () => {
-  const messages = document.querySelectorAll(
-    '.chat-line__message, .seventv-message'
-  );
+  const messages = document.querySelectorAll(".chat-line__message, .seventv-message");
   messages.forEach(checkAndApplyBlocking);
 };
 
 const loadSettings = () => {
-  chrome.storage.local.get(['blockedWords', 'blockAscii'], (result) => {
+  chrome.storage.local.get(["blockedWords", "blockAscii"], (result) => {
     blockedWords = result.blockedWords || [];
     globalFilters.blockAscii = result.blockAscii || false;
     scanAndApplyBlockingToAllMessages();
@@ -157,17 +159,13 @@ const observer = new MutationObserver((mutations) => {
   mutations.forEach((mutation) => {
     mutation.addedNodes.forEach((node) => {
       if (node.nodeType !== Node.ELEMENT_NODE) return;
-      if (node.matches('.chat-line__message, .seventv-message')) {
+      if (node.matches(".chat-line__message, .seventv-message")) {
         checkAndApplyBlocking(node);
       }
-      const messages = node.querySelectorAll(
-        '.chat-line__message, .seventv-message'
-      );
+      const messages = node.querySelectorAll(".chat-line__message, .seventv-message");
       messages.forEach(checkAndApplyBlocking);
     });
   });
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
-
-
