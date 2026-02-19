@@ -21,8 +21,13 @@ const updateStats = (filter) => {
 };
 
 const isAsciiArt = (text) => {
-  const nonAsciiRatio = text.replace(/[a-zA-Z0-9\s]/g, "").length / text.length;
-  return nonAsciiRatio > 0.5;
+  if (!text || !text.trim()) return false;
+  if (!text.includes("\n")) return false;
+
+  const visible = text.replace(/\s/g, "");
+  const symbols = (text.match(/[^\p{L}\p{N}\s]/gu) || []).length;
+
+  return symbols / visible.length > 0.5;
 };
 
 const checkAndApplyBlocking = (element) => {
